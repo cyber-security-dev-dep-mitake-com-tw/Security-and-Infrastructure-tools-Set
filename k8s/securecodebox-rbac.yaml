@@ -40,3 +40,4 @@ subjects:
 - kind: ServiceAccount
   name: securecodebox-operator
   namespace: security-tools
+

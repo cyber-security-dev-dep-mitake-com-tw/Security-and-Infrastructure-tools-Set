@@ -12,7 +12,6 @@ $Red = "Red"
 $Green = "Green"
 $Yellow = "Yellow"
 $Blue = "Blue"
-$Cyan = "Cyan"
 
 # 日誌函數
 function Write-Info {
@@ -174,7 +173,7 @@ function Test-Deployment {
 # 顯示訪問信息
 function Show-AccessInfo {
     Write-Host ""
-    Write-Success "=== 部署完成！==="
+    Write-Success "=== 部署完成! ==="
     Write-Host ""
     Write-Info "服務訪問信息:"
     Write-Host "  ArgoCD UI: http://localhost:30081"
@@ -196,7 +195,7 @@ function Start-Deployment {
     
     if (-not $SkipConfirmation) {
         Write-Warning "此操作將在 Kubernetes 集群中部署多個服務"
-        $confirmation = Read-Host "確定要繼續嗎？(y/N)"
+        $confirmation = Read-Host "確定要繼續嗎? (y/N)"
         if ($confirmation -ne 'y' -and $confirmation -ne 'Y') {
             Write-Info "操作已取消"
             return
@@ -214,7 +213,7 @@ function Start-Deployment {
     Test-Deployment
     Show-AccessInfo
     
-    Write-Success "所有服務部署完成！"
+    Write-Success "所有服務部署完成!"
 }
 
 # 執行主函數

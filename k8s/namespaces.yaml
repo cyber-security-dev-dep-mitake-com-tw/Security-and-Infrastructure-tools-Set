@@ -13,3 +13,4 @@ metadata:
   labels:
     name: argocd
     purpose: gitops-deployment
+
