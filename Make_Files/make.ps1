@@ -33,6 +33,9 @@ function Show-Help {
     Write-Host "  scan-intelowl   - Run IntelOwl Nuclei scan (requires -Target)"
     Write-Host "  backup          - Backup databases"
     Write-Host "  clean           - Remove all volumes"
+    Write-Host "  deploy-k8s      - Deploy Kubernetes services"
+    Write-Host "  teardown-k8s    - Remove Kubernetes services"
+    Write-Host "  k8s-status      - Check Kubernetes services status"
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Yellow
     Write-Host "  .\make.ps1 up"
@@ -185,6 +188,90 @@ function Invoke-ScanIntelOwl {
     Write-Host "IntelOwl scan completed. Results saved to scan_results volume." -ForegroundColor Green
 }
 
+function Invoke-DeployK8s {
+    Write-Host "Deploying Kubernetes services..." -ForegroundColor Green
+    
+    # 檢查 kubectl
+    if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
+        Write-Host "Error: kubectl not found. Please install kubectl first." -ForegroundColor Red
+        return
+    }
+    
+    # 檢查 Kubernetes 集群
+    try {
+        kubectl cluster-info | Out-Null
+        Write-Host "Kubernetes cluster connection verified" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Error: Cannot connect to Kubernetes cluster" -ForegroundColor Red
+        Write-Host "Please ensure Docker Desktop Kubernetes is enabled" -ForegroundColor Yellow
+        return
+    }
+    
+    # 執行部署腳本
+    $scriptPath = Join-Path $PSScriptRoot "..\scripts\deploy-k8s.ps1"
+    if (Test-Path $scriptPath) {
+        Write-Host "Running PowerShell deployment script..." -ForegroundColor Yellow
+        PowerShell -ExecutionPolicy Bypass -File $scriptPath
+    }
+    else {
+        Write-Host "Error: Deployment script not found at $scriptPath" -ForegroundColor Red
+        Write-Host "Available files in scripts directory:" -ForegroundColor Yellow
+        Get-ChildItem (Join-Path $PSScriptRoot "..\scripts") -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.Name)" }
+    }
+}
+
+function Invoke-TeardownK8s {
+    Write-Host "Removing Kubernetes services..." -ForegroundColor Yellow
+    
+    # 檢查 kubectl
+    if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
+        Write-Host "Error: kubectl not found. Please install kubectl first." -ForegroundColor Red
+        return
+    }
+    
+    # 執行清理腳本
+    $scriptPath = Join-Path $PSScriptRoot "..\scripts\teardown-k8s.sh"
+    if (Test-Path $scriptPath) {
+        Write-Host "Running teardown script..." -ForegroundColor Yellow
+        bash $scriptPath
+    }
+    else {
+        Write-Host "Error: Teardown script not found at $scriptPath" -ForegroundColor Red
+    }
+}
+
+function Invoke-K8sStatus {
+    Write-Host "Checking Kubernetes services status..." -ForegroundColor Green
+    
+    # 檢查 kubectl
+    if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
+        Write-Host "Error: kubectl not found. Please install kubectl first." -ForegroundColor Red
+        return
+    }
+    
+    try {
+        Write-Host "=== Cluster Info ===" -ForegroundColor Cyan
+        kubectl cluster-info
+        
+        Write-Host "`n=== Pods Status ===" -ForegroundColor Cyan
+        kubectl get pods -n security-tools 2>$null
+        kubectl get pods -n argocd 2>$null
+        
+        Write-Host "`n=== Services Status ===" -ForegroundColor Cyan
+        kubectl get services -n security-tools 2>$null
+        kubectl get services -n argocd 2>$null
+        
+        Write-Host "`n=== Deployments Status ===" -ForegroundColor Cyan
+        kubectl get deployments -n security-tools 2>$null
+        kubectl get deployments -n argocd 2>$null
+    }
+    catch {
+        Write-Host "Error: Cannot connect to Kubernetes cluster" -ForegroundColor Red
+        Write-Host "Please ensure Docker Desktop Kubernetes is enabled" -ForegroundColor Yellow
+    }
+}
+
 # Main execution
 switch ($Command.ToLower()) {
     "help" { Show-Help }
@@ -201,6 +288,9 @@ switch ($Command.ToLower()) {
     "scan-intelowl" { Invoke-ScanIntelOwl }
     "backup" { Invoke-Backup }
     "clean" { Invoke-Clean }
+    "deploy-k8s" { Invoke-DeployK8s }
+    "teardown-k8s" { Invoke-TeardownK8s }
+    "k8s-status" { Invoke-K8sStatus }
     default {
         Write-Host "Unknown command: $Command" -ForegroundColor Red
         Write-Host ""
