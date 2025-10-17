@@ -47,42 +47,48 @@ services:
     networks:
       - security_net
 
-  # Nuclei Parser (requires Kubernetes - disabled for standalone use)
-  # parser-nuclei:
-  #   image: securecodebox/parser-nuclei:latest
-  #   environment:
-  #     DATABASE_URL: postgres://sectools:${DB_PASSWORD:-changeme}@postgres:5432/sectools
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   volumes:
-  #     - scan_results:/results
-  #   networks:
-  #     - security_net
+  # Nuclei Parser (Kubernetes service - enabled for K8s integration)
+  parser-nuclei:
+    image: securecodebox/parser-nuclei:latest
+    environment:
+      DATABASE_URL: postgres://sectools:${DB_PASSWORD:-changeme}@postgres:5432/sectools
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - scan_results:/results
+    networks:
+      - security_net
+    profiles:
+      - k8s-integration
 
-  # AMASS Parser (requires Kubernetes - disabled for standalone use)
-  # parser-amass:
-  #   image: securecodebox/parser-amass:latest
-  #   environment:
-  #     DATABASE_URL: postgres://sectools:${DB_PASSWORD:-changeme}@postgres:5432/sectools
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   volumes:
-  #     - scan_results:/results
-  #   networks:
-  #     - security_net
+  # AMASS Parser (Kubernetes service - enabled for K8s integration)
+  parser-amass:
+    image: securecodebox/parser-amass:latest
+    environment:
+      DATABASE_URL: postgres://sectools:${DB_PASSWORD:-changeme}@postgres:5432/sectools
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - scan_results:/results
+    networks:
+      - security_net
+    profiles:
+      - k8s-integration
 
-  # SecureCodeBox Operator (requires Kubernetes - disabled for standalone use)
-  # operator:
-  #   image: securecodebox/operator:latest
-  #   environment:
-  #     NAMESPACE: default
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - operator_config:/config
-  #   networks:
-  #     - security_net
+  # SecureCodeBox Operator (Kubernetes service - enabled for K8s integration)
+  operator:
+    image: securecodebox/operator:latest
+    environment:
+      NAMESPACE: default
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - operator_config:/config
+    networks:
+      - security_net
+    profiles:
+      - k8s-integration
 
   # Nuclei Scanner (run-once service - use docker-compose run)
   scanner-nuclei:
@@ -125,17 +131,19 @@ services:
     networks:
       - security_net
 
-  # ArgoCD - GitOps (requires Kubernetes - disabled for standalone use)
-  # argocd:
-  #   image: argoproj/argocd:v2.6.15
-  #   environment:
-  #     ARGOCD_SERVER_INSECURE: "true"
-  #   ports:
-  #     - "8081:8080"
-  #   volumes:
-  #     - argocd_data:/var/lib/argocd
-  #   networks:
-  #     - security_net
+  # ArgoCD - GitOps (Kubernetes service - enabled for K8s integration)
+  argocd:
+    image: argoproj/argocd:v2.6.15
+    environment:
+      ARGOCD_SERVER_INSECURE: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - argocd_data:/var/lib/argocd
+    networks:
+      - security_net
+    profiles:
+      - k8s-integration
 
   # CovenantSQL - distributed database (requires config.yaml - disabled for standalone use)
   # covenantsql:

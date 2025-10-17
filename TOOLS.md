@@ -38,9 +38,13 @@
 #### AMASS
 - **用途**: 深度子域名發現和外部資產盤點
 - **Docker Hub**: `caffix/amass`
-- **整合狀態**: ✅ 已整合 (Parser)
+- **整合狀態**: ✅ 已整合 (Scanner)
 - **資源需求**: 中等 (CPU: 1核, RAM: 1GB)
 - **特點**: 支援被動和主動偵察
+- **使用方式**:
+  ```bash
+  make scan-amass TARGET=example.com
+  ```
 
 #### Nmap
 - **用途**: 網路探測和安全審計
@@ -71,6 +75,26 @@
 - **資源需求**: 低 (CPU: 0.5核, RAM: 256MB)
 - **端口**: 8200
 
+#### IntelOwl Nuclei Analyzer
+- **用途**: 進階漏洞分析與 AI 增強掃描
+- **Docker Hub**: `intelowlproject/intelowl_nuclei_analyzer`
+- **整合狀態**: ✅ 已整合
+- **資源需求**: 高 (CPU: 2核, RAM: 2GB)
+- **使用方式**:
+  ```bash
+  make scan-intelowl TARGET=https://example.com
+  ```
+
+#### Burp Suite
+- **用途**: Web 應用程式安全測試
+- **Docker Hub**: `retenet/burpsuite`
+- **整合狀態**: ✅ 已整合
+- **資源需求**: 高 (CPU: 2核, RAM: 4GB)
+- **使用方式**:
+  ```bash
+  make scan-burp TARGET=https://example.com
+  ```
+
 ### 🌐 網路與閘道
 
 #### Traefik
@@ -88,16 +112,18 @@
 #### ArgoCD
 - **用途**: GitOps 持續部署
 - **Docker Hub**: `argoproj/argocd`
-- **整合狀態**: ✅ 已整合
+- **整合狀態**: ⚠️ 已配置但禁用（需要 Kubernetes 環境）
 - **資源需求**: 中等 (CPU: 1核, RAM: 512MB)
 - **端口**: 8081
+- **備註**: 在 docker-compose.yml 中被註解，需要 Kubernetes 環境才能運行
 
 ### 🔧 其他整合工具
 
 #### SecureCodeBox Operator
 - **用途**: 掃描工作流編排
 - **Docker Hub**: `securecodebox/operator`
-- **整合狀態**: ✅ 已整合
+- **整合狀態**: ⚠️ 已配置但禁用（需要 Kubernetes 環境）
+- **備註**: 在 docker-compose.yml 中被註解，需要 Kubernetes 環境才能運行
 
 ---
 
