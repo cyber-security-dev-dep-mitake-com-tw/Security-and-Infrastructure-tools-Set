@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Database - shared by tools that need persistence
   postgres:
@@ -87,14 +85,15 @@ services:
 
   # Nuclei Scanner
   scanner-nuclei:
-    image: securecodebox/scanner-amass:sha-287751e
+    image: projectdiscovery/nuclei:latest
     volumes:
       - scan_results:/results
-      - nuclei_templates:/templates
+      - nuclei_templates:/root/.config/nuclei
     environment:
       SCAN_OUTPUT_DIR: /results
     networks:
       - security_net
+    command: ["-version"]  # Override with actual scan
 
   # Nmap
   nmap:
@@ -114,9 +113,9 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"  # Dashboard
+      - "8888:80"    # HTTP (changed from 80 to avoid conflict)
+      - "8443:443"   # HTTPS (changed from 443)
+      - "8090:8080"  # Dashboard (changed from 8080 to avoid conflict)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_config:/etc/traefik
