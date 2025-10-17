@@ -781,10 +781,10 @@ secrets:
     file: ./secrets/db_password.txt
 
 services:
-  postgres:
+   postgres:
     secrets:
       - db_password
-    environment:
+   environment:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
 ```
 
@@ -902,7 +902,7 @@ logging:
 # 添加 Prometheus 和 Grafana
 prometheus:
   image: prom/prometheus:latest
-  volumes:
+   volumes:
     - ./prometheus.yml:/etc/prometheus/prometheus.yml
   ports:
     - "9090:9090"

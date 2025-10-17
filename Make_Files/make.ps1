@@ -28,6 +28,9 @@ function Show-Help {
     Write-Host "  logs            - View logs (use -f for follow mode)"
     Write-Host "  scan-nuclei     - Run Nuclei scan (requires -Target)"
     Write-Host "  scan-nmap       - Run Nmap scan (requires -Target)"
+    Write-Host "  scan-amass      - Run AMASS scan (requires -Target)"
+    Write-Host "  scan-burp       - Run Burp Suite scan (requires -Target)"
+    Write-Host "  scan-intelowl   - Run IntelOwl Nuclei scan (requires -Target)"
     Write-Host "  backup          - Backup databases"
     Write-Host "  clean           - Remove all volumes"
     Write-Host ""
@@ -140,6 +143,48 @@ function Invoke-Clean {
     }
 }
 
+function Invoke-ScanAmass {
+    if (-not $Target) {
+        Write-Host "Error: -Target parameter required for AMASS scan" -ForegroundColor Red
+        Write-Host "Example: .\make.ps1 scan-amass -Target example.com" -ForegroundColor Yellow
+        return
+    }
+    
+    Write-Host "Running AMASS scan on $Target..." -ForegroundColor Green
+    Push-Location $COMPOSE_DIR
+    docker-compose run --rm scanner-amass amass enum -d $Target -o /results/amass-$Target.txt
+    Pop-Location
+    Write-Host "AMASS scan completed. Results saved to scan_results volume." -ForegroundColor Green
+}
+
+function Invoke-ScanBurp {
+    if (-not $Target) {
+        Write-Host "Error: -Target parameter required for Burp Suite scan" -ForegroundColor Red
+        Write-Host "Example: .\make.ps1 scan-burp -Target https://example.com" -ForegroundColor Yellow
+        return
+    }
+    
+    Write-Host "Running Burp Suite scan on $Target..." -ForegroundColor Green
+    Write-Host "Note: Burp Suite requires GUI. This is a basic containerized version." -ForegroundColor Yellow
+    Push-Location $COMPOSE_DIR
+    docker-compose run --rm scanner-burpsuite java -jar /opt/burpsuite/burpsuite.jar --help
+    Pop-Location
+}
+
+function Invoke-ScanIntelOwl {
+    if (-not $Target) {
+        Write-Host "Error: -Target parameter required for IntelOwl scan" -ForegroundColor Red
+        Write-Host "Example: .\make.ps1 scan-intelowl -Target https://example.com" -ForegroundColor Yellow
+        return
+    }
+    
+    Write-Host "Running IntelOwl Nuclei scan on $Target..." -ForegroundColor Green
+    Push-Location $COMPOSE_DIR
+    docker-compose run --rm intelowl-nuclei nuclei -u $Target -o /results/intelowl-$Target.json
+    Pop-Location
+    Write-Host "IntelOwl scan completed. Results saved to scan_results volume." -ForegroundColor Green
+}
+
 # Main execution
 switch ($Command.ToLower()) {
     "help" { Show-Help }
@@ -151,6 +196,9 @@ switch ($Command.ToLower()) {
     "logs" { Invoke-Logs }
     "scan-nuclei" { Invoke-ScanNuclei }
     "scan-nmap" { Invoke-ScanNmap }
+    "scan-amass" { Invoke-ScanAmass }
+    "scan-burp" { Invoke-ScanBurp }
+    "scan-intelowl" { Invoke-ScanIntelOwl }
     "backup" { Invoke-Backup }
     "clean" { Invoke-Clean }
     default {
