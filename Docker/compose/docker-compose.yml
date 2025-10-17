@@ -1,5 +1,4 @@
-version: '3.8'
-
+name: "dennis-security-infra-toolkit"
 services:
   # Database - shared by tools that need persistence
   postgres:
@@ -7,7 +6,7 @@ services:
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
       POSTGRES_USER: sectools
-      POSTGRES_DB: security
+      POSTGRES_DB: sectools
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d:ro
@@ -48,11 +47,11 @@ services:
     networks:
       - security_net
 
-  # Nuclei Parser
+  # Nuclei Parser (Kubernetes service - enabled for K8s integration)
   parser-nuclei:
     image: securecodebox/parser-nuclei:latest
     environment:
-      DATABASE_URL: postgres://sectools:${DB_PASSWORD:-changeme}@postgres:5432/security
+      DATABASE_URL: postgres://sectools:${DB_PASSWORD:-changeme}@postgres:5432/sectools
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,12 +59,14 @@ services:
       - scan_results:/results
     networks:
       - security_net
+    profiles:
+      - k8s-integration
 
-  # AMASS Parser
+  # AMASS Parser (Kubernetes service - enabled for K8s integration)
   parser-amass:
     image: securecodebox/parser-amass:latest
     environment:
-      DATABASE_URL: postgres://sectools:${DB_PASSWORD:-changeme}@postgres:5432/security
+      DATABASE_URL: postgres://sectools:${DB_PASSWORD:-changeme}@postgres:5432/sectools
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,8 +74,10 @@ services:
       - scan_results:/results
     networks:
       - security_net
+    profiles:
+      - k8s-integration
 
-  # SecureCodeBox Operator
+  # SecureCodeBox Operator (Kubernetes service - enabled for K8s integration)
   operator:
     image: securecodebox/operator:latest
     environment:
@@ -84,26 +87,31 @@ services:
       - operator_config:/config
     networks:
       - security_net
+    profiles:
+      - k8s-integration
 
-  # Nuclei Scanner
+  # Nuclei Scanner (run-once service - use docker-compose run)
   scanner-nuclei:
-    image: securecodebox/scanner-amass:sha-287751e
+    image: projectdiscovery/nuclei:latest
     volumes:
       - scan_results:/results
-      - nuclei_templates:/templates
+      - nuclei_templates:/root/.config/nuclei
     environment:
       SCAN_OUTPUT_DIR: /results
     networks:
       - security_net
+    profiles:
+      - scanner
 
-  # Nmap
+  # Nmap Scanner (run-once service - use docker-compose run)
   nmap:
     image: broadinstitute/nmap:latest
     volumes:
       - scan_results:/results
     networks:
       - security_net
-    command: ["--help"]  # Override with actual scan
+    profiles:
+      - scanner
 
   # Traefik - reverse proxy/load balancer
   traefik:
@@ -114,16 +122,16 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"  # Dashboard
+      - "8888:80"    # HTTP (changed from 80 to avoid conflict)
+      - "8443:443"   # HTTPS (changed from 443)
+      - "8090:8080"  # Dashboard (changed from 8080 to avoid conflict)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_config:/etc/traefik
     networks:
       - security_net
 
-  # ArgoCD - GitOps
+  # ArgoCD - GitOps (Kubernetes service - enabled for K8s integration)
   argocd:
     image: argoproj/argocd:v2.6.15
     environment:
@@ -134,14 +142,46 @@ services:
       - argocd_data:/var/lib/argocd
     networks:
       - security_net
+    profiles:
+      - k8s-integration
 
-  # CovenantSQL - distributed database (if needed)
-  covenantsql:
-    image: covenantsql/covenantsql:latest
+  # CovenantSQL - distributed database (requires config.yaml - disabled for standalone use)
+  # covenantsql:
+  #   image: covenantsql/covenantsql:latest
+  #   volumes:
+  #     - covenantsql_data:/data
+  #   networks:
+  #     - security_net
+
+  # AMASS Scanner (run-once service - use docker-compose run)
+  scanner-amass:
+    image: caffix/amass:latest
     volumes:
-      - covenantsql_data:/data
+      - scan_results:/results
     networks:
       - security_net
+    profiles:
+      - scanner
+
+  # IntelOwl Nuclei Analyzer (run-once service)
+  intelowl-nuclei:
+    image: intelowlproject/intelowl_nuclei_analyzer:v6.4.0
+    volumes:
+      - scan_results:/results
+    networks:
+      - security_net
+    profiles:
+      - scanner
+
+  # Burp Suite Scanner (run-once service)
+  scanner-burpsuite:
+    image: retenet/burpsuite:latest
+    volumes:
+      - scan_results:/results
+    networks:
+      - security_net
+    profiles:
+      - scanner
 
   # Web UI/Dashboard (example with httpx)
   httpx-server:
@@ -152,7 +192,7 @@ services:
       DB_HOST: postgres
       DB_USER: sectools
       DB_PASSWORD: ${DB_PASSWORD:-changeme}
-      DB_NAME: security
+      DB_NAME: sectools
     depends_on:
       postgres:
         condition: service_healthy
